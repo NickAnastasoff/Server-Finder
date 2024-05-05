@@ -1,0 +1,8 @@
+{
+    "API_KEY": "XXXX", your api key
+    "PAGES": 1,
+    "MC_VERSION": "1.20.4",
+    "ACTIVE_ONLY": true,
+    "OUTPUT_FILE": ""
+  }
+  
