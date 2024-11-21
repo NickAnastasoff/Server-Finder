@@ -22,6 +22,7 @@ def initialize_found():
     conn.commit()
     conn.close()
 
+
 def initialize_starred():
     conn = sqlite3.connect("servers.db")
     c = conn.cursor()

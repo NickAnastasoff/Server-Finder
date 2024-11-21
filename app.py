@@ -16,29 +16,34 @@ app.secret_key = "your_secret_key"  # Needed for flashing messages
 # Define the mode based on environment variable
 DEVELOPMENT_MODE = True
 
+
 @app.before_request
 def skip_auth_in_dev():
     if DEVELOPMENT_MODE:
         print("Authentication skipped in development mode.")
         return  # Allows request to proceed without authentication
 
+
 @app.before_request
 def enforce_auth():
-    if not DEVELOPMENT_MODE and request.remote_addr != '127.0.0.1':
+    if not DEVELOPMENT_MODE and request.remote_addr != "127.0.0.1":
         print("Authentication required for external IP.")
         # Implement actual authentication logic here
         # For now, we just return a simple unauthorized message
         return "Unauthorized access", 401
+
 
 def get_db_connection():
     conn = sqlite3.connect("servers.db")
     conn.row_factory = sqlite3.Row
     return conn
 
+
 # Configuration
 CONFIG = {}
 API_URL = "https://api.shodan.io/shodan/host/search"
 PAGE_SIZE = 100  # Number of results per page
+
 
 def load_config():
     global CONFIG
@@ -49,6 +54,7 @@ def load_config():
         print("Failed to load config.json!")
         print(e)
         exit()
+
 
 def do_request(page_num):
     api_params = {"key": CONFIG["API_KEY"], "page": page_num, "query": "Minecraft"}
@@ -69,6 +75,7 @@ def do_request(page_num):
 
     return result
 
+
 def shodan_scan():
     all_servers = []
     pages = CONFIG.get("PAGES", 1)
@@ -79,6 +86,7 @@ def shodan_scan():
         else:
             break
     return all_servers
+
 
 def update_database_with_servers(servers):
     conn = get_db_connection()
@@ -137,7 +145,9 @@ def update_database_with_servers(servers):
     conn.commit()
     conn.close()
 
+
 from flask import request
+
 
 @app.route("/")
 def index():
@@ -154,7 +164,7 @@ def index():
         "players_max",
         "description",
     ]
-    
+
     # Get sort parameters from query or cookies
     sort_by = request.args.get("sort") or request.cookies.get("sort", "players_online")
     if sort_by not in allowed_sort_columns:
@@ -167,7 +177,7 @@ def index():
     filter_option = request.args.get("filter", None)  # 'starred', 'unstarred', or None
 
     conn = get_db_connection()
-    
+
     # Build the base query with LEFT JOIN to determine star status
     query = f"""
     SELECT servers.*, 
@@ -177,18 +187,22 @@ def index():
     """
 
     # Add WHERE clause based on filter
-    if filter_option == 'starred':
+    if filter_option == "starred":
         query += " WHERE starred_servers.hash IS NOT NULL"
-    elif filter_option == 'unstarred':
+    elif filter_option == "unstarred":
         query += " WHERE starred_servers.hash IS NULL"
-    
+
     # Add ORDER BY clause
     query += f" ORDER BY {sort_by} {sort_order}"
-    
+
     servers = conn.execute(query).fetchall()
     conn.close()
     response = render_template(
-        "index.html", servers=servers, sort_by=sort_by, sort_order=sort_order, filter_option=filter_option
+        "index.html",
+        servers=servers,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        filter_option=filter_option,
     )
     return response
 
@@ -204,6 +218,7 @@ def remove_server(server_id):
     conn.close()
     return redirect(url_for("index"))
 
+
 @app.route("/api/servers", methods=["GET"])
 def get_servers():
     """
@@ -214,6 +229,7 @@ def get_servers():
     conn.close()
     server_list = [dict(server) for server in servers]
     return jsonify(server_list)
+
 
 @app.route("/rescan", methods=["POST"])
 def rescan_servers():
@@ -231,8 +247,12 @@ def rescan_servers():
         pages = 1  # default to 1 if invalid
     CONFIG["PAGES"] = pages
 
+    # Get query parameter from the form
+    query = request.form.get("query", default="Minecraft")
+    CONFIG["QUERY"] = query
+
     flash(
-        f"Starting server rescan for {pages} page(s). This may take a few moments...",
+        f"Starting server rescan for {pages} page(s) with query '{query}'. This may take a few moments...",
         "info",
     )
     servers = shodan_scan()
@@ -243,11 +263,14 @@ def rescan_servers():
         flash("Rescan failed. Please check the logs for details.", "error")
     return redirect(url_for("index"))
 
+
 @app.route("/star/<server_id>", methods=["POST"])
 def star_server(server_id):
     conn = get_db_connection()
     # Fetch server details from servers table
-    server = conn.execute("SELECT * FROM servers WHERE hash = ?", (server_id,)).fetchone()
+    server = conn.execute(
+        "SELECT * FROM servers WHERE hash = ?", (server_id,)
+    ).fetchone()
     if server:
         # Insert into starred_servers
         conn.execute(
@@ -259,10 +282,16 @@ def star_server(server_id):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                server["hash"], server["ip_str"], server["port"], server["location_city"],
-                server["location_country_name"], server["version"], server["players_online"],
-                server["players_max"], server["description"]
-            )
+                server["hash"],
+                server["ip_str"],
+                server["port"],
+                server["location_city"],
+                server["location_country_name"],
+                server["version"],
+                server["players_online"],
+                server["players_max"],
+                server["description"],
+            ),
         )
         conn.commit()
         flash("Server starred successfully!", "success")
@@ -270,6 +299,7 @@ def star_server(server_id):
         flash("Server not found.", "error")
     conn.close()
     return redirect(url_for("index"))
+
 
 @app.route("/unstar/<server_id>", methods=["POST"])
 def unstar_server(server_id):
@@ -279,6 +309,7 @@ def unstar_server(server_id):
     conn.close()
     flash("Server unstarred successfully!", "success")
     return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
     app.run(debug=DEVELOPMENT_MODE)

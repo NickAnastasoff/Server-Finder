@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Server List</title>
+    <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Include Google Fonts -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap">
     <style>
         :root {
@@ -77,10 +79,16 @@
             font-weight: 500;
         }
 
-        .dark-mode-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
+        .buttons-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin: 20px;
+            gap: 15px; /* Adds space between the buttons */
+            padding-right: 5%;
+        }
+
+        .dark-mode-toggle, .rescan-button {
             background: var(--button-bg);
             border: none;
             color: var(--button-text-color);
@@ -91,7 +99,7 @@
             transition: background-color 0.3s ease;
         }
 
-        .dark-mode-toggle:hover {
+        .dark-mode-toggle:hover, .rescan-button:hover {
             background-color: var(--button-bg-hover);
         }
 
@@ -160,7 +168,7 @@
             transform: scale(1.1);
         }
 
-        .icon-btn.copy {
+        .icon-btn.copy-btn {
             color: var(--icon-color-copy);
         }
 
@@ -207,25 +215,116 @@
             background-color: #cce5ff;
             color: #004085;
         }
+        /* Styles for the modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Black with opacity */
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid var(--table-border-color);
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: var(--text-color);
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: var(--icon-color-delete);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal-form label {
+            font-weight: bold;
+        }
+
+        .modal-form input {
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid var(--table-border-color);
+            border-radius: 4px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .search-button {
+            background-color: var(--button-bg);
+            color: var(--button-text-color);
+            padding: 15px;
+            font-size: 1.2em;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .search-button:hover {
+            background-color: var(--button-bg-hover);
+        }
     </style>
+    <script>
+        // Immediately set theme based on the saved user preference
+        (function() {
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme) {
+                document.documentElement.setAttribute('data-theme', currentTheme);
+            }
+        })();
+    </script>
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('index') }}">All Servers</a> |
-        <a href="{{ url_for('index', filter='starred') }}">Starred Servers</a> |
-        <a href="{{ url_for('index', filter='unstarred') }}">Unstarred Servers</a>
-    </nav>
+    <!-- Removed navigation bar as per your request -->
+    
     <h1>Server List</h1>
 
-    <!-- Dark Mode Toggle Button -->
-    <button class="dark-mode-toggle" id="dark-mode-toggle">Toggle Dark Mode</button>
+    <div class="buttons-container">
+        <button class="dark-mode-toggle" id="dark-mode-toggle">Toggle Dark Mode</button>
+        <button id="rescan-button" class="rescan-button">Rescan Servers</button>
+    </div>
 
-    <!-- Rescan Servers Form -->
-    <form action="{{ url_for('rescan_servers') }}" method="post" style="display: block; text-align: center; margin: 20px;">
-        Number of Pages (1-10): <input type="number" name="pages" min="1" max="10" value="1" required>
-        <button type="submit" class="dark-mode-toggle" style="margin-left: 10px;">Rescan Servers</button>
-    </form>
-
+    <!-- The Modal -->
+    <div id="rescan-modal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close" id="modal-close">&times;</span>
+            <h2>Rescan Servers</h2>
+            <form action="{{ url_for('rescan_servers') }}" method="post" class="modal-form">
+                <label for="pages">Number of Pages (1-10):</label>
+                <input type="number" name="pages" min="1" max="10" value="1" required>
+                <!-- Add other search parameters here if needed -->
+                <!-- Big Search! button at the bottom -->
+                <button type="submit" class="search-button">Search!</button>
+            </form>
+        </div>
+    </div>
     <!-- Display Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -273,7 +372,11 @@
                         {% endif %}
                     </a>
                 </th>
-                <th>Actions</th>
+                                <th>
+                    <a href="{{ url_for('index', filter='starred') }}" class="sortable-header" data-sort="action">
+                        Action
+                    </a>
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -285,7 +388,7 @@
                 <td>{{ server.players_online }}/{{ server.players_max }}</td>
                 <td class="action-buttons">
                     <!-- Copy IP Button -->
-                    <button class="icon-btn copy" data-ip="{{ server.ip_str }}" title="Copy IP">
+                    <button class="icon-btn copy-btn" data-ip="{{ server.ip_str }}" title="Copy IP">
                         <i class="fas fa-copy"></i>
                     </button>
 
@@ -320,43 +423,80 @@
         </tbody>
     </table>
 
-    <!-- JavaScript for Dark Mode Toggle and Other Features -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Dark Mode Toggle
-            const darkModeToggle = document.getElementById('dark-mode-toggle');
-            const currentTheme = localStorage.getItem('theme');
-            if (currentTheme) {
-                document.documentElement.setAttribute('data-theme', currentTheme);
-                if (currentTheme === 'dark') {
-                    darkModeToggle.textContent = 'Light Mode';
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Copy Button Functionality
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        copyButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const ip = button.getAttribute('data-ip');
+                console.log('Copy IP button clicked. IP:', ip); // Debugging statement
+                if (!ip) {
+                    alert('No IP address found to copy.');
+                    console.error('Data-IP attribute is missing.');
+                    return;
                 }
-            }
-
-            darkModeToggle.addEventListener('click', function() {
-                let theme = document.documentElement.getAttribute('data-theme');
-                if (theme === 'dark') {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                    localStorage.setItem('theme', 'light');
-                    darkModeToggle.textContent = 'Dark Mode';
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                    darkModeToggle.textContent = 'Light Mode';
-                }
-            });
-
-            // Set Cookies for Sorting
-            const sortableHeaders = document.querySelectorAll('.sortable-header');
-            sortableHeaders.forEach(function(header) {
-                header.addEventListener('click', function() {
-                    const sort = header.getAttribute('data-sort');
-                    const order = header.href.includes('order=asc') ? 'asc' : 'desc';
-                    document.cookie = `sort=${sort}; path=/;`;
-                    document.cookie = `order=${order}; path=/;`;
+                navigator.clipboard.writeText(ip).then(function () {
+                }).catch(function (err) {
+                    console.error('Failed to copy IP address:', err);
                 });
             });
         });
-    </script>
+
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme) {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            if (currentTheme === 'dark') {
+                darkModeToggle.textContent = 'Light Mode';
+            }
+        }
+
+        darkModeToggle.addEventListener('click', function () {
+            let theme = document.documentElement.getAttribute('data-theme');
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                darkModeToggle.textContent = 'Dark Mode';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                darkModeToggle.textContent = 'Light Mode';
+            }
+        });
+
+        // Modal Functionality
+        const modal = document.getElementById('rescan-modal');
+        const btn = document.getElementById('rescan-button');
+        const span = document.getElementById('modal-close');
+
+        btn.addEventListener('click', function () {
+            modal.style.display = 'block';
+        });
+
+        span.addEventListener('click', function () {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Set Cookies for Sorting
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
+        sortableHeaders.forEach(function (header) {
+            header.addEventListener('click', function () {
+                const sort = header.getAttribute('data-sort');
+                const order = header.href.includes('order=asc') ? 'asc' : 'desc';
+                document.cookie = `sort=${sort}; path=/;`;
+                document.cookie = `order=${order}; path=/;`;
+            });
+        });
+    });
+</script>
+
 </body>
 </html>
