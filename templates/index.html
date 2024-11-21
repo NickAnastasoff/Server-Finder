@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Server List</title>
+    <style>
+        /* Styling for the table and buttons */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+        button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin: 2px;
+        }
+        button:hover {
+            background-color: #d32f2f;
+        }
+        .copy-btn {
+            background-color: #4CAF50;
+        }
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+        /* Styling for flash messages */
+        .flashes {
+            list-style-type: none;
+            padding: 0;
+        }
+        .flash {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .flash.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .flash.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .flash.info {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+    </style>
+</head>
+<nav>
+    <a href="{{ url_for('index') }}">All Servers</a> |
+    <a href="{{ url_for('view_starred_servers') }}">Starred Servers</a>
+</nav>
+<body>
+    <h1>Server List</h1>
+    <!-- Rescan Servers Form -->
+    <form action="{{ url_for('rescan_servers') }}" method="post" style="display:inline;">
+        Number of Pages (1-10): <input type="number" name="pages" min="1" max="10" value="1" required>
+        <button type="submit">Rescan Servers</button>
+    </form>
+    <!-- Display Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="flash {{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <!-- Server List Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>IP</th>
+                <th>Port</th>
+                <th>Location</th>
+                <th>Version</th>
+                <th>
+                    <a href="{{ url_for('index', sort='players_online', order='asc' if sort_by == 'players_online' and sort_order == 'desc' else 'desc') }}">
+                        Players Online
+                        {% if sort_by == 'players_online' %}
+                            {% if sort_order == 'asc' %}
+                                ▲
+                            {% else %}
+                                ▼
+                            {% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for server in servers %}
+            <tr>
+                <td>{{ server.ip_str }}</td>
+                <td>{{ server.port }}</td>
+                <td>{{ server.location_city }}, {{ server.location_country_name }}</td>
+                <td>{{ server.version }}</td>
+                <td>{{ server.players_online }}/{{ server.players_max }}</td>
+                <td>{{ server.description }}</td>
+<td>
+    <!-- Existing buttons -->
+    <button class="copy-btn" data-ip="{{ server.ip_str }}">Copy IP</button>
+    <form action="{{ url_for('remove_server', server_id=server.hash) }}" method="post" style="display:inline;">
+        <button type="submit">Delete</button>
+    </form>
+    <!-- Star/Unstar Button -->
+    <form action="{{ url_for('star_server', server_id=server.hash) }}" method="post" style="display:inline;">
+        <button type="submit">Star</button>
+    </form>
+</td>
+
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">No servers found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <!-- JavaScript Function for Copying IP with Fallback -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            copyButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const ip = button.getAttribute('data-ip');
+                    console.log('Copy IP button clicked. IP:', ip); // Debugging statement
+
+                    if (!ip) {
+                        alert('No IP address found to copy.');
+                        console.error('Data-IP attribute is missing.');
+                        return;
+                    }
+
+                    // Try using the Clipboard API first
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(ip).then(function() {
+                            console.log('Successfully copied:', ip); // Debugging statement
+
+                        }).catch(function(err) {
+                            console.error('Error using Clipboard API:', err);
+                            // Fallback to execCommand
+                            fallbackCopyText(ip);
+                        });
+                    } else {
+                        // Fallback to execCommand
+                        fallbackCopyText(ip);
+                    }
+                });
+            });
+
+            function fallbackCopyText(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                // Move the textarea off-screen
+                textarea.style.position = 'fixed';
+                textarea.style.top = '-1000px';
+                textarea.style.left = '-1000px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        console.log('Successfully copied (fallback):', text); // Debugging statement
+                    } else {
+                        alert('Could not copy IP.');
+                        console.error('execCommand was unsuccessful.');
+                    }
+                } catch (err) {
+                    alert('Could not copy IP: ' + err);
+                    console.error('execCommand error:', err); // Debugging statement
+                }
+                document.body.removeChild(textarea);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Include your existing head content -->
+</head>
+<body>
+    <h1>Starred Servers</h1>
+    <!-- Server List Table -->
+    <table>
+        <!-- Table headers -->
+        <tbody>
+            {% for server in servers %}
+            <tr>
+                <!-- Server details -->
+                <td>{{ server.ip_str }}</td>
+                <!-- Other server fields -->
+                <td>
+                    <form action="{{ url_for('unstar_server', server_id=server.hash) }}" method="post" style="display:inline;">
+                        <button type="submit">Unstar</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7">No starred servers found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

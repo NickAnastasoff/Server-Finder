@@ -5,12 +5,9 @@ API_URL = "https://api.shodan.io/shodan/host/search"
 PAGE_SIZE = 100
 CONFIG = {}
 
+
 def do_request(page_num):
-    api_params = {
-        "key": CONFIG["API_KEY"],
-        "page": page_num,
-        "query": "Minecraft"
-    }
+    api_params = {"key": CONFIG["API_KEY"], "page": page_num, "query": "Minecraft"}
 
     if CONFIG["MC_VERSION"] != "":
         api_params["query"] = "Minecraft " + CONFIG["MC_VERSION"]
@@ -28,6 +25,7 @@ def do_request(page_num):
 
     return result
 
+
 def parse_page(page_json):
     result = []
     for server in page_json["matches"]:
@@ -39,6 +37,7 @@ def parse_page(page_json):
         port = str(server["port"])
         result.append(ip + ":" + port)
     return result
+
 
 if __name__ == "__main__":
     try:
