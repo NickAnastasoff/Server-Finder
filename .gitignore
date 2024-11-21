@@ -1,0 +1,11 @@
+# Ignore Python virtual environment
+env/
+
+# Ignore servers database file
+servers.db
+
+# Ignore configuration file
+config.json
+
+# Ignore compiled Python cache files
+__pycache__/

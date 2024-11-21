@@ -3,6 +3,12 @@ import sqlite3
 import requests
 import json
 import os
+from init_db import initialize_found, initialize_starred
+
+# if servers.db does not exist, create it
+if not os.path.exists("servers.db"):
+    initialize_found()
+    initialize_starred()
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Needed for flashing messages
@@ -131,6 +137,8 @@ def update_database_with_servers(servers):
     conn.commit()
     conn.close()
 
+from flask import request
+
 @app.route("/")
 def index():
     """
@@ -146,20 +154,44 @@ def index():
         "players_max",
         "description",
     ]
-    sort_by = request.args.get("sort", "players_online")
+    
+    # Get sort parameters from query or cookies
+    sort_by = request.args.get("sort") or request.cookies.get("sort", "players_online")
     if sort_by not in allowed_sort_columns:
         sort_by = "players_online"
-    sort_order = request.args.get("order", "desc")
+
+    sort_order = request.args.get("order") or request.cookies.get("order", "asc")
     if sort_order not in ["asc", "desc"]:
-        sort_order = "desc"
+        sort_order = "asc"
+
+    filter_option = request.args.get("filter", None)  # 'starred', 'unstarred', or None
 
     conn = get_db_connection()
-    query = f"SELECT * FROM servers ORDER BY {sort_by} {sort_order}"
+    
+    # Build the base query with LEFT JOIN to determine star status
+    query = f"""
+    SELECT servers.*, 
+        CASE WHEN starred_servers.hash IS NOT NULL THEN 1 ELSE 0 END AS is_starred
+    FROM servers
+    LEFT JOIN starred_servers ON servers.hash = starred_servers.hash
+    """
+
+    # Add WHERE clause based on filter
+    if filter_option == 'starred':
+        query += " WHERE starred_servers.hash IS NOT NULL"
+    elif filter_option == 'unstarred':
+        query += " WHERE starred_servers.hash IS NULL"
+    
+    # Add ORDER BY clause
+    query += f" ORDER BY {sort_by} {sort_order}"
+    
     servers = conn.execute(query).fetchall()
     conn.close()
-    return render_template(
-        "index.html", servers=servers, sort_by=sort_by, sort_order=sort_order
+    response = render_template(
+        "index.html", servers=servers, sort_by=sort_by, sort_order=sort_order, filter_option=filter_option
     )
+    return response
+
 
 @app.route("/remove/<server_id>", methods=["POST"])
 def remove_server(server_id):
@@ -246,15 +278,7 @@ def unstar_server(server_id):
     conn.commit()
     conn.close()
     flash("Server unstarred successfully!", "success")
-    return redirect(url_for("view_starred_servers"))
-
-@app.route("/starred")
-def view_starred_servers():
-    conn = get_db_connection()
-    servers = conn.execute("SELECT * FROM starred_servers").fetchall()
-    conn.close()
-    return render_template("starred_servers.html", servers=servers)
-
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
     app.run(debug=DEVELOPMENT_MODE)

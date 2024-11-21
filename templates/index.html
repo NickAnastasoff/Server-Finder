@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Server List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Styling for the table and buttons */
         table {
@@ -11,30 +12,43 @@
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 15px;
+            text-align: center;
         }
         th {
             background-color: #f2f2f2;
-            text-align: left;
-        }
-        button {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 5px 10px;
+            text-align: center;
             cursor: pointer;
-            margin: 2px;
         }
-        button:hover {
-            background-color: #d32f2f;
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
         }
-        .copy-btn {
-            background-color: #4CAF50;
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
         }
-        .copy-btn:hover {
-            background-color: #45a049;
+        .icon-btn.copy {
+            color: #4CAF50;
         }
-        /* Styling for flash messages */
+        .icon-btn.star {
+            color: #ff9800;
+        }
+        .icon-btn.unstar {
+            color: #757575;
+        }
+        .icon-btn.delete {
+            color: #f44336;
+        }
+        .icon-btn:hover {
+            opacity: 0.7;
+        }
+        /* Flash messages styling */
         .flashes {
             list-style-type: none;
             padding: 0;
@@ -57,136 +71,168 @@
         }
     </style>
 </head>
+<body>
 <nav>
     <a href="{{ url_for('index') }}">All Servers</a> |
-    <a href="{{ url_for('view_starred_servers') }}">Starred Servers</a>
+    <a href="{{ url_for('index', filter='starred') }}">Starred Servers</a> |
+    <a href="{{ url_for('index', filter='unstarred') }}">Unstarred Servers</a>
 </nav>
-<body>
-    <h1>Server List</h1>
-    <!-- Rescan Servers Form -->
-    <form action="{{ url_for('rescan_servers') }}" method="post" style="display:inline;">
-        Number of Pages (1-10): <input type="number" name="pages" min="1" max="10" value="1" required>
-        <button type="submit">Rescan Servers</button>
-    </form>
-    <!-- Display Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul class="flashes">
-                {% for category, message in messages %}
-                    <li class="flash {{ category }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-    <!-- Server List Table -->
-    <table>
-        <thead>
-            <tr>
-                <th>IP</th>
-                <th>Port</th>
-                <th>Location</th>
-                <th>Version</th>
-                <th>
-                    <a href="{{ url_for('index', sort='players_online', order='asc' if sort_by == 'players_online' and sort_order == 'desc' else 'desc') }}">
-                        Players Online
-                        {% if sort_by == 'players_online' %}
-                            {% if sort_order == 'asc' %}
-                                ▲
-                            {% else %}
-                                ▼
-                            {% endif %}
-                        {% endif %}
-                    </a>
-                </th>
-                <th>Description</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for server in servers %}
-            <tr>
-                <td>{{ server.ip_str }}</td>
-                <td>{{ server.port }}</td>
-                <td>{{ server.location_city }}, {{ server.location_country_name }}</td>
-                <td>{{ server.version }}</td>
-                <td>{{ server.players_online }}/{{ server.players_max }}</td>
-                <td>{{ server.description }}</td>
-<td>
-    <!-- Existing buttons -->
-    <button class="copy-btn" data-ip="{{ server.ip_str }}">Copy IP</button>
-    <form action="{{ url_for('remove_server', server_id=server.hash) }}" method="post" style="display:inline;">
-        <button type="submit">Delete</button>
-    </form>
-    <!-- Star/Unstar Button -->
-    <form action="{{ url_for('star_server', server_id=server.hash) }}" method="post" style="display:inline;">
-        <button type="submit">Star</button>
-    </form>
-</td>
-
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7">No servers found.</td>
-            </tr>
+<h1>Server List</h1>
+<!-- Rescan Servers Form -->
+<form action="{{ url_for('rescan_servers') }}" method="post" style="display:inline;">
+    Number of Pages (1-10): <input type="number" name="pages" min="1" max="10" value="1" required>
+    <button type="submit">Rescan Servers</button>
+</form>
+<!-- Display Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="flash {{ category }}">{{ message }}</li>
             {% endfor %}
-        </tbody>
-    </table>
-    <!-- JavaScript Function for Copying IP with Fallback -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const copyButtons = document.querySelectorAll('.copy-btn');
-            copyButtons.forEach(function(button) {
-                button.addEventListener('click', function() {
-                    const ip = button.getAttribute('data-ip');
-                    console.log('Copy IP button clicked. IP:', ip); // Debugging statement
+        </ul>
+    {% endif %}
+{% endwith %}
+<!-- Server List Table -->
+<table>
+    <thead>
+        <tr>
+            <th>
+                <a href="{{ url_for('index', sort='description', order='asc' if sort_by == 'description' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="description">
+                    Description
+                    {% if sort_by == 'description' %}
+                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="{{ url_for('index', sort='version', order='asc' if sort_by == 'version' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="version">
+                    Server Type
+                    {% if sort_by == 'version' %}
+                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="{{ url_for('index', sort='location_city', order='asc' if sort_by == 'location_city' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="location_city">
+                    Location
+                    {% if sort_by == 'location_city' %}
+                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="{{ url_for('index', sort='players_online', order='asc' if sort_by == 'players_online' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="players_online">
+                    Players Online
+                    {% if sort_by == 'players_online' %}
+                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                    {% endif %}
+                </a>
+            </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for server in servers %}
+        <tr>
+            <td>{{ server.description }}</td>
+            <td>{{ server.version }}</td>
+            <td>{{ server.location_city }}, {{ server.location_country_name }}</td>
+            <td>{{ server.players_online }}/{{ server.players_max }}</td>
+            <td class="action-buttons">
+                <!-- Copy IP Button -->
+                <button class="icon-btn copy" data-ip="{{ server.ip_str }}" title="Copy IP">
+                    <i class="fas fa-copy"></i>
+                </button>
 
-                    if (!ip) {
-                        alert('No IP address found to copy.');
-                        console.error('Data-IP attribute is missing.');
-                        return;
-                    }
+                <!-- Star/Unstar Button -->
+                {% if server.is_starred %}
+                    <form action="{{ url_for('unstar_server', server_id=server.hash) }}" method="post" style="display:inline;">
+                        <button type="submit" class="icon-btn unstar" title="Unstar Server">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </form>
+                {% else %}
+                    <form action="{{ url_for('star_server', server_id=server.hash) }}" method="post" style="display:inline;">
+                        <button type="submit" class="icon-btn star" title="Star Server">
+                            <i class="far fa-star"></i>
+                        </button>
+                    </form>
+                {% endif %}
 
-                    // Try using the Clipboard API first
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(ip).then(function() {
-                            console.log('Successfully copied:', ip); // Debugging statement
-
-                        }).catch(function(err) {
-                            console.error('Error using Clipboard API:', err);
-                            // Fallback to execCommand
-                            fallbackCopyText(ip);
-                        });
-                    } else {
-                        // Fallback to execCommand
-                        fallbackCopyText(ip);
-                    }
-                });
-            });
-
-            function fallbackCopyText(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                // Move the textarea off-screen
-                textarea.style.position = 'fixed';
-                textarea.style.top = '-1000px';
-                textarea.style.left = '-1000px';
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        console.log('Successfully copied (fallback):', text); // Debugging statement
-                    } else {
-                        alert('Could not copy IP.');
-                        console.error('execCommand was unsuccessful.');
-                    }
-                } catch (err) {
-                    alert('Could not copy IP: ' + err);
-                    console.error('execCommand error:', err); // Debugging statement
+                <!-- Delete Button -->
+                <form action="{{ url_for('remove_server', server_id=server.hash) }}" method="post" style="display:inline;">
+                    <button type="submit" class="icon-btn delete" title="Delete Server">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">No servers found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<!-- JavaScript Function for Copying IP and Setting Cookies for Sorting -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy IP Functionality
+        const copyButtons = document.querySelectorAll('.copy');
+        copyButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const ip = button.getAttribute('data-ip');
+                if (!ip) {
+                    alert('No IP address found to copy.');
+                    return;
                 }
-                document.body.removeChild(textarea);
-            }
+                // Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(ip).then(function() {
+                        alert('IP address copied to clipboard.');
+                    }).catch(function(err) {
+                        alert('Could not copy IP.');
+                    });
+                } else {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = ip;
+                    textarea.style.position = 'fixed';
+                    textarea.style.top = '-1000px';
+                    textarea.style.left = '-1000px';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        alert('IP address copied to clipboard.');
+                    } catch (err) {
+                        alert('Could not copy IP: ' + err);
+                    }
+                    document.body.removeChild(textarea);
+                }
+            });
         });
-    </script>
+
+        // Set Cookies for Sorting
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
+        sortableHeaders.forEach(function(header) {
+            header.addEventListener('click', function() {
+                const sort = header.getAttribute('data-sort');
+                const order = header.href.includes('order=asc') ? 'asc' : 'desc';
+                document.cookie = `sort=${sort}; path=/;`;
+                document.cookie = `order=${order}; path=/;`;
+            });
+        });
+    });
+
+    // Utility to Get Cookie Value by Name
+    function getCookieValue(name) {
+        let matches = document.cookie.match(new RegExp(
+            "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+        ));
+        return matches ? decodeURIComponent(matches[1]) : undefined;
+    }
+</script>
 </body>
 </html>
