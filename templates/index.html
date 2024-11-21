@@ -4,67 +4,205 @@
     <meta charset="UTF-8">
     <title>Server List</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap">
     <style>
-        /* Styling for the table and buttons */
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        :root {
+            --background-color: #ffffff;
+            --text-color: #333333;
+            --table-header-bg: #f7f7f7;
+            --table-border-color: #e0e0e0;
+            --card-bg: #fdfdfd;
+            --icon-color-copy: #4CAF50;
+            --icon-color-star: #ff9800;
+            --icon-color-unstar: #757575;
+            --icon-color-delete: #f44336;
+            --primary-color: #007BFF;
+            --button-bg: #007BFF;
+            --button-bg-hover: #0056b3;
+            --button-text-color: #ffffff;
+            --nav-bg: #ffffff;
+            --nav-text-color: #007BFF;
         }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --table-header-bg: #333333;
+            --table-border-color: #444444;
+            --card-bg: #2a2a2a;
+            --icon-color-copy: #66bb6a;
+            --icon-color-star: #ffb74d;
+            --icon-color-unstar: #bdbdbd;
+            --icon-color-delete: #e57373;
+            --primary-color: #BB86FC;
+            --button-bg: #BB86FC;
+            --button-bg-hover: #3700B3;
+            --button-text-color: #ffffff;
+            --nav-bg: #121212;
+            --nav-text-color: #BB86FC;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background-color: var(--nav-bg);
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+        }
+
+        nav a {
+            color: var(--nav-text-color);
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 500;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--button-bg);
+            border: none;
+            color: var(--button-text-color);
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dark-mode-toggle:hover {
+            background-color: var(--button-bg-hover);
+        }
+
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid var(--table-border-color);
             padding: 15px;
             text-align: center;
         }
+
         th {
-            background-color: #f2f2f2;
-            text-align: center;
+            background-color: var(--table-header-bg);
             cursor: pointer;
         }
+
+        th a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        th a:hover {
+            color: var(--primary-color);
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--table-header-bg);
+        }
+
+        tr:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
         .action-buttons {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 10px;
         }
+
         .icon-btn {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1.2em;
-            padding: 5px;
+            font-size: 1.4em;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
-        .icon-btn.copy {
-            color: #4CAF50;
-        }
-        .icon-btn.star {
-            color: #ff9800;
-        }
-        .icon-btn.unstar {
-            color: #757575;
-        }
-        .icon-btn.delete {
-            color: #f44336;
-        }
+
         .icon-btn:hover {
-            opacity: 0.7;
+            background-color: rgba(0, 0, 0, 0.1);
+            transform: scale(1.1);
         }
-        /* Flash messages styling */
+
+        .icon-btn.copy {
+            color: var(--icon-color-copy);
+        }
+
+        .icon-btn.star {
+            color: var(--icon-color-star);
+        }
+
+        .icon-btn.unstar {
+            color: var(--icon-color-unstar);
+        }
+
+        .icon-btn.delete {
+            color: var(--icon-color-delete);
+        }
+
+        form {
+            display: inline;
+        }
+
         .flashes {
             list-style-type: none;
             padding: 0;
+            width: 90%;
+            margin: 20px auto;
         }
+
         .flash {
-            padding: 10px;
+            padding: 15px;
             margin-bottom: 10px;
+            border-radius: 8px;
         }
+
         .flash.success {
             background-color: #d4edda;
             color: #155724;
         }
+
         .flash.error {
             background-color: #f8d7da;
             color: #721c24;
         }
+
         .flash.info {
             background-color: #cce5ff;
             color: #004085;
@@ -72,167 +210,153 @@
     </style>
 </head>
 <body>
-<nav>
-    <a href="{{ url_for('index') }}">All Servers</a> |
-    <a href="{{ url_for('index', filter='starred') }}">Starred Servers</a> |
-    <a href="{{ url_for('index', filter='unstarred') }}">Unstarred Servers</a>
-</nav>
-<h1>Server List</h1>
-<!-- Rescan Servers Form -->
-<form action="{{ url_for('rescan_servers') }}" method="post" style="display:inline;">
-    Number of Pages (1-10): <input type="number" name="pages" min="1" max="10" value="1" required>
-    <button type="submit">Rescan Servers</button>
-</form>
-<!-- Display Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="flash {{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
-<!-- Server List Table -->
-<table>
-    <thead>
-        <tr>
-            <th>
-                <a href="{{ url_for('index', sort='description', order='asc' if sort_by == 'description' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="description">
-                    Description
-                    {% if sort_by == 'description' %}
-                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="{{ url_for('index', sort='version', order='asc' if sort_by == 'version' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="version">
-                    Server Type
-                    {% if sort_by == 'version' %}
-                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="{{ url_for('index', sort='location_city', order='asc' if sort_by == 'location_city' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="location_city">
-                    Location
-                    {% if sort_by == 'location_city' %}
-                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>
-                <a href="{{ url_for('index', sort='players_online', order='asc' if sort_by == 'players_online' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="players_online">
-                    Players Online
-                    {% if sort_by == 'players_online' %}
-                        {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
-                    {% endif %}
-                </a>
-            </th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for server in servers %}
-        <tr>
-            <td>{{ server.description }}</td>
-            <td>{{ server.version }}</td>
-            <td>{{ server.location_city }}, {{ server.location_country_name }}</td>
-            <td>{{ server.players_online }}/{{ server.players_max }}</td>
-            <td class="action-buttons">
-                <!-- Copy IP Button -->
-                <button class="icon-btn copy" data-ip="{{ server.ip_str }}" title="Copy IP">
-                    <i class="fas fa-copy"></i>
-                </button>
+    <nav>
+        <a href="{{ url_for('index') }}">All Servers</a> |
+        <a href="{{ url_for('index', filter='starred') }}">Starred Servers</a> |
+        <a href="{{ url_for('index', filter='unstarred') }}">Unstarred Servers</a>
+    </nav>
+    <h1>Server List</h1>
 
-                <!-- Star/Unstar Button -->
-                {% if server.is_starred %}
-                    <form action="{{ url_for('unstar_server', server_id=server.hash) }}" method="post" style="display:inline;">
-                        <button type="submit" class="icon-btn unstar" title="Unstar Server">
-                            <i class="fas fa-star"></i>
-                        </button>
-                    </form>
-                {% else %}
-                    <form action="{{ url_for('star_server', server_id=server.hash) }}" method="post" style="display:inline;">
-                        <button type="submit" class="icon-btn star" title="Star Server">
-                            <i class="far fa-star"></i>
-                        </button>
-                    </form>
-                {% endif %}
+    <!-- Dark Mode Toggle Button -->
+    <button class="dark-mode-toggle" id="dark-mode-toggle">Toggle Dark Mode</button>
 
-                <!-- Delete Button -->
-                <form action="{{ url_for('remove_server', server_id=server.hash) }}" method="post" style="display:inline;">
-                    <button type="submit" class="icon-btn delete" title="Delete Server">
-                        <i class="fas fa-trash-alt"></i>
+    <!-- Rescan Servers Form -->
+    <form action="{{ url_for('rescan_servers') }}" method="post" style="display: block; text-align: center; margin: 20px;">
+        Number of Pages (1-10): <input type="number" name="pages" min="1" max="10" value="1" required>
+        <button type="submit" class="dark-mode-toggle" style="margin-left: 10px;">Rescan Servers</button>
+    </form>
+
+    <!-- Display Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="flash {{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Server List Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>
+                    <a href="{{ url_for('index', sort='description', order='asc' if sort_by == 'description' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="description">
+                        Description
+                        {% if sort_by == 'description' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort='version', order='asc' if sort_by == 'version' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="version">
+                        Server Type
+                        {% if sort_by == 'version' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort='location_city', order='asc' if sort_by == 'location_city' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="location_city">
+                        Location
+                        {% if sort_by == 'location_city' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort='players_online', order='asc' if sort_by == 'players_online' and sort_order == 'desc' else 'desc') }}" class="sortable-header" data-sort="players_online">
+                        Players Online
+                        {% if sort_by == 'players_online' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </a>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for server in servers %}
+            <tr>
+                <td>{{ server.description }}</td>
+                <td>{{ server.version }}</td>
+                <td>{{ server.location_city }}, {{ server.location_country_name }}</td>
+                <td>{{ server.players_online }}/{{ server.players_max }}</td>
+                <td class="action-buttons">
+                    <!-- Copy IP Button -->
+                    <button class="icon-btn copy" data-ip="{{ server.ip_str }}" title="Copy IP">
+                        <i class="fas fa-copy"></i>
                     </button>
-                </form>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="5">No servers found.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<!-- JavaScript Function for Copying IP and Setting Cookies for Sorting -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Copy IP Functionality
-        const copyButtons = document.querySelectorAll('.copy');
-        copyButtons.forEach(function(button) {
-            button.addEventListener('click', function() {
-                const ip = button.getAttribute('data-ip');
-                if (!ip) {
-                    alert('No IP address found to copy.');
-                    return;
+
+                    <!-- Star/Unstar Button -->
+                    {% if server.is_starred %}
+                        <form action="{{ url_for('unstar_server', server_id=server.hash) }}" method="post">
+                            <button type="submit" class="icon-btn unstar" title="Unstar Server">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('star_server', server_id=server.hash) }}" method="post">
+                            <button type="submit" class="icon-btn star" title="Star Server">
+                                <i class="far fa-star"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <!-- Delete Button -->
+                    <form action="{{ url_for('remove_server', server_id=server.hash) }}" method="post">
+                        <button type="submit" class="icon-btn delete" title="Delete Server">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No servers found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- JavaScript for Dark Mode Toggle and Other Features -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dark Mode Toggle
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme) {
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                if (currentTheme === 'dark') {
+                    darkModeToggle.textContent = 'Light Mode';
                 }
-                // Clipboard API
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(ip).then(function() {
-                        alert('IP address copied to clipboard.');
-                    }).catch(function(err) {
-                        alert('Could not copy IP.');
-                    });
+            }
+
+            darkModeToggle.addEventListener('click', function() {
+                let theme = document.documentElement.getAttribute('data-theme');
+                if (theme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                    darkModeToggle.textContent = 'Dark Mode';
                 } else {
-                    // Fallback for older browsers
-                    const textarea = document.createElement('textarea');
-                    textarea.value = ip;
-                    textarea.style.position = 'fixed';
-                    textarea.style.top = '-1000px';
-                    textarea.style.left = '-1000px';
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    try {
-                        document.execCommand('copy');
-                        alert('IP address copied to clipboard.');
-                    } catch (err) {
-                        alert('Could not copy IP: ' + err);
-                    }
-                    document.body.removeChild(textarea);
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    darkModeToggle.textContent = 'Light Mode';
                 }
             });
-        });
 
-        // Set Cookies for Sorting
-        const sortableHeaders = document.querySelectorAll('.sortable-header');
-        sortableHeaders.forEach(function(header) {
-            header.addEventListener('click', function() {
-                const sort = header.getAttribute('data-sort');
-                const order = header.href.includes('order=asc') ? 'asc' : 'desc';
-                document.cookie = `sort=${sort}; path=/;`;
-                document.cookie = `order=${order}; path=/;`;
+            // Set Cookies for Sorting
+            const sortableHeaders = document.querySelectorAll('.sortable-header');
+            sortableHeaders.forEach(function(header) {
+                header.addEventListener('click', function() {
+                    const sort = header.getAttribute('data-sort');
+                    const order = header.href.includes('order=asc') ? 'asc' : 'desc';
+                    document.cookie = `sort=${sort}; path=/;`;
+                    document.cookie = `order=${order}; path=/;`;
+                });
             });
         });
-    });
-
-    // Utility to Get Cookie Value by Name
-    function getCookieValue(name) {
-        let matches = document.cookie.match(new RegExp(
-            "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
-        ));
-        return matches ? decodeURIComponent(matches[1]) : undefined;
-    }
-</script>
+    </script>
 </body>
 </html>
